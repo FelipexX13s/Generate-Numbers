@@ -151,7 +151,6 @@ def main():
             st.session_state.current_digit = selected_digit
     
     # Display results
-    if 'generated_images' in st.session_state:
         st.header(f"Generated Images of Digit {st.session_state.current_digit}")
         
         # Create and display the image grid
@@ -171,35 +170,9 @@ def main():
                 # Convert to PIL Image for better display
                 img_pil = Image.fromarray((img * 255).astype(np.uint8))
                 img_pil = img_pil.resize((112, 112), Image.NEAREST)  # Upscale for better visibility
-                st.image(img_pil, caption=f"Sample {i+1}", use_column_width=True)
+                st.image(img_pil, caption=f"Sample {i+1}")
     
-    else:
-        # Default display
-        st.info("👆 Select a digit and click 'Generate Images' to create handwritten digit samples!")
-        
-        # Show example of what the app can do
-        st.subheader("About This App")
-        st.markdown("""
-        This web application uses a **Variational Autoencoder (VAE)** trained on the MNIST dataset to generate 
-        synthetic handwritten digits. Here's what it does:
-        
-        - 🎯 **Targeted Generation**: Select any digit (0-9) to generate
-        - 🎨 **Multiple Samples**: Creates 5 different variations of the selected digit
-        - 🧠 **Custom Trained Model**: Uses a VAE model trained from scratch (not pre-trained)
-        - 📊 **MNIST-like Output**: Generates 28x28 grayscale images similar to the MNIST dataset
-        
-        ### How it Works:
-        1. The VAE learns the underlying distribution of handwritten digits
-        2. It encodes digit-specific patterns into a latent space
-        3. When generating, it samples from the learned distribution for the selected digit
-        4. The decoder reconstructs these samples into recognizable digit images
-        
-        ### Model Details:
-        - **Architecture**: Variational Autoencoder with 400 hidden units
-        - **Latent Dimension**: 20-dimensional latent space
-        - **Training**: Trained on full MNIST dataset using Google Colab T4 GPU
-        - **Loss Function**: Combination of reconstruction loss (BCE) and KL divergence
-        """)
+    
 
 if __name__ == "__main__":
     main()
