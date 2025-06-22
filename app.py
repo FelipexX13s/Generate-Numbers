@@ -83,21 +83,52 @@ def load_model():
         return None, None
 
 def generate_digit_images(model, digit, num_samples=5, digit_stats=None, latent_dim=20):
-    """Generate images for a specific digit"""
+    """Generate images for a specific digit with improved quality"""
     model.eval()
     with torch.no_grad():
         if digit_stats and digit in digit_stats:
             # Use digit-specific statistics for better generation
             mean = torch.tensor(digit_stats[digit]['mean'])
             std = torch.tensor(digit_stats[digit]['std'])
-            # Add some randomness to create variety
-            z = torch.randn(num_samples, latent_dim) * (std * 0.8) + mean + torch.randn(num_samples, latent_dim) * 0.2
+            
+            # Reduce randomness for cleaner digits (smaller std multiplier)
+            z = torch.randn(num_samples, latent_dim) * (std * 0.5) + mean
+            
+            # Try multiple generations and pick the best ones
+            all_samples = []
+            for _ in range(3):  # Generate 3 batches
+                batch_z = torch.randn(num_samples, latent_dim) * (std * 0.6) + mean
+                batch_samples = model.decode(batch_z).view(-1, 28, 28)
+                all_samples.append(batch_samples)
+            
+            # Combine all samples and pick the best ones (highest average pixel intensity in digit area)
+            all_samples = torch.cat(all_samples, dim=0)
+            scores = []
+            for sample in all_samples:
+                # Score based on contrast and sharpness
+                center_region = sample[6:22, 6:22]  # Focus on center where digit should be
+                score = center_region.mean() - sample[:3, :].mean() - sample[-3:, :].mean()  # High center, low edges
+                scores.append(score.item())
+            
+            # Pick top 5 samples
+            top_indices = torch.tensor(scores).argsort(descending=True)[:num_samples]
+            samples = all_samples[top_indices]
+            
         else:
-            # Fallback to random sampling
-            z = torch.randn(num_samples, latent_dim)
+            # Fallback to random sampling with multiple attempts
+            all_samples = []
+            for _ in range(10):
+                z = torch.randn(1, latent_dim)
+                sample = model.decode(z).view(28, 28)
+                all_samples.append(sample)
+            
+            all_samples = torch.stack(all_samples)
+            # Pick best 5
+            scores = [sample[7:21, 7:21].mean().item() for sample in all_samples]
+            top_indices = torch.tensor(scores).argsort(descending=True)[:num_samples]
+            samples = all_samples[top_indices]
         
-        samples = model.decode(z)
-        return samples.view(num_samples, 28, 28).numpy()
+        return samples.numpy()
 
 def create_image_grid(images, titles=None):
     """Create a grid of images"""
