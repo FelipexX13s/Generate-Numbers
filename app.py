@@ -58,6 +58,7 @@ def load_model():
     """Load the trained VAE model"""
     try:
         # For deployment, you'll need to upload the model file
+        # Use weights_only=False for compatibility with models containing NumPy data
         checkpoint = torch.load('mnist_vae_model.pth', map_location='cpu', weights_only=False)
         
         model_config = checkpoint['model_config']
@@ -125,18 +126,18 @@ def main():
     if model is None:
         st.stop()
     
-    # Sidebar for controls
-    st.sidebar.header("Generation Controls")
+    # Main page controls
+    st.subheader("Choose a digit to generate:")
     
     # Digit selection
-    selected_digit = st.sidebar.selectbox(
-        "Choose a digit to generate (0-9):",
+    selected_digit = st.selectbox(
+        "Select digit (0-9):",
         options=list(range(10)),
         index=2
     )
     
     # Generation button
-    if st.sidebar.button("🎲 Generate Images", type="primary"):
+    if st.button("🎲 Generate Images", type="primary"):
         with st.spinner("Generating handwritten digits..."):
             # Generate images
             generated_images = generate_digit_images(
@@ -151,6 +152,7 @@ def main():
             st.session_state.current_digit = selected_digit
     
     # Display results
+    if 'generated_images' in st.session_state:
         st.header(f"Generated Images of Digit {st.session_state.current_digit}")
         
         # Create and display the image grid
@@ -171,8 +173,6 @@ def main():
                 img_pil = Image.fromarray((img * 255).astype(np.uint8))
                 img_pil = img_pil.resize((112, 112), Image.NEAREST)  # Upscale for better visibility
                 st.image(img_pil, caption=f"Sample {i+1}")
-    
-    
 
 if __name__ == "__main__":
     main()
