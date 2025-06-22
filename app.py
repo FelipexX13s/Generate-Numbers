@@ -58,7 +58,7 @@ def load_model():
     """Load the trained VAE model"""
     try:
         # For deployment, you'll need to upload the model file
-        checkpoint = torch.load('mnist_vae_model.pth', map_location='cpu')
+        checkpoint = torch.load('mnist_vae_model.pth', map_location='cpu', weights_only=False)
         
         model_config = checkpoint['model_config']
         model = VAE(
